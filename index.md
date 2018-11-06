@@ -16,18 +16,18 @@ sudo gedit /etc/apache2/apache2.conf
 
 **Agregar al final del archivo de configuración**
 
-`
+```
 ServerSignature Off
 ServerTokens Prod
-`
+```
 
 ### 2.2 Desactivar visualización de directorios (localhost/test)
 
-`
+```
 <Directory /var/www/html>
 	Options -Indexes
 </Directory>
-`
+```
 
 ### 2.3 Crear nuevo usuario sin privilegios
 
@@ -38,10 +38,10 @@ sudo useradd -d /var/www/ -g <grupo> -s /bin/no-login <user>
 
 **En apache2.conf comentar grupo y usuario por defecto y añadir**
 
-`
+```
 User <usuario>
 Group <grupo>
-`
+```
 
 ### 2.4 Configurar https con SSL
 
