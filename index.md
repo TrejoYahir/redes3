@@ -1,37 +1,94 @@
-## Welcome to GitHub Pages
+## 1. Instalación
 
-You can use the [editor on GitHub](https://github.com/TrejoYahir/redes3/edit/master/index.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```
+sudo apt install apache2
+sudo service apache2 start
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+## 2. Configuración
 
-### Jekyll Themes
+```
+sudo cp /etc/apache2/apache2.conf /etc/apache2/apache2.conf.backup 
+sudo gedit /etc/apache2/apache2.conf
+```
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/TrejoYahir/redes3/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+### 2.1 Desactivar despliegue de versión de Apache
 
-### Support or Contact
+**Agregar al final del archivo de configuración**
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+`
+ServerSignature Off
+ServerTokens Prod
+`
+
+### 2.2 Desactivar visualización de directorios (localhost/test)
+
+`
+<Directory /var/www/html>
+	Options -Indexes
+</Directory>
+`
+
+### 2.3 Crear nuevo usuario sin privilegios
+
+```
+sudo groupadd <grupo>
+sudo useradd -d /var/www/ -g <grupo> -s /bin/no-login <user>
+```
+
+**En apache2.conf comentar grupo y usuario por defecto y añadir**
+
+`
+User <usuario>
+Group <grupo>
+`
+
+### 2.4 Configurar https con SSL
+
+**Instalamos openssl y activamos modulo ssl**
+
+```
+sudo apt install openssl
+sudo a2enmod ssl
+```
+
+**Generamos una llave, una solicitud de firma de certificado y autofirmamos el certificado**
+
+```
+openssl genrsa -des3 -out ca.key 1024
+openssl req -new -key ca.key -out ca.csr
+openssl x509 -req -days 365 -in ca.csr -signkey ca.key -out ca.crt
+```
+
+**Movemos los certificados a la carpeta indicada**
+
+```
+sudo mv ca.crt /etc/pki/tls/certs/ca.crt
+sudo mv ca.key /etc/pki/tls/certs/ca.key
+sudo mv ca.csr /etc/pki/tls/certs/ca.csr
+```
+
+**Escuchamos peticiones https en el puerto 443**
+
+```
+NameVirtualHost *:443
+<VirtualHost *:443>
+        SSLEngine on
+        SSLCertificateFile /etc/pki/tls/certs/ca.crt
+        SSLCertificateKeyFile /etc/pki/tls/certs/ca.key
+        # SSLCertificateChainFile /etc/pki/tls/certs/certificadoExterno.crt
+        DocumentRoot /var/www/html
+        # ServerName redes3.com
+</VirtualHost>
+```
+
+**Reiniciamos el servidor**
+
+```
+sudo service apache2 restart
+```
+
+
+## Fuentes
+- [Como configurar HTTPS con openSSL](http://www.linuxhispano.net/2011/02/21/configurar-soporte-https-en-apache/)
+- [Tips para mejorar la seguridad en apache](https://www.tecmint.com/apache-security-tips/)
